@@ -94,7 +94,7 @@ workflows:
 python src/flow-executor.py --flow flows/example-flow.yaml
 
 # Run an integration workflow
-python src/integration-engine.py --workflow complete-data-pipeline
+python src/integration_engine.py --workflow complete-data-pipeline
 ```
 
 ## 📁 Project Structure
@@ -110,8 +110,8 @@ python src/integration-engine.py --workflow complete-data-pipeline
 ├── src/                     # Core system code
 │   ├── core/               # Core components
 │   ├── messaging/          # Inter-flow communication
-│   ├── flow-manager.py     # Flow lifecycle management
-│   ├── integration-engine.py # Flow orchestration
+│   ├── flow_manager.py     # Flow lifecycle management
+│   ├── integration_engine.py # Flow orchestration
 │   ├── flow-executor.py    # Individual flow execution
 │   ├── state-manager.py    # State persistence
 │   └── data-bridge.py      # Data transformation

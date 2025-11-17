@@ -23,7 +23,7 @@ This guide will help you get up and running with the Multi-Flow Integration syst
 
 3. **Verify installation:**
    ```bash
-   python src/flow-manager.py
+   python src/flow_manager.py
    ```
 
 ## Quick Start
@@ -74,7 +74,7 @@ steps:
 Validate your flow definition:
 
 ```bash
-python src/flow-manager.py
+python src/flow_manager.py
 ```
 
 You should see output indicating your flow was discovered and validated.
@@ -162,8 +162,8 @@ Each flow consists of **steps** that:
 │   ├── integration-workflows.yaml
 │   └── communication.yaml
 ├── src/                     # Core system code
-│   ├── flow-manager.py      # Flow management
-│   ├── integration-engine.py # Workflow orchestration
+│   ├── flow_manager.py      # Flow management
+│   ├── integration_engine.py # Workflow orchestration
 │   └── ...
 ├── .github/workflows/       # GitHub Actions
 ├── docs/                    # Documentation
