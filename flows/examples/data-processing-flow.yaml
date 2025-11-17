@@ -1,0 +1,128 @@
+name: "data-processing-flow"
+version: "1.0"
+type: "data-pipeline"
+description: "Process and transform data from multiple sources"
+
+metadata:
+  author: "Multi-Flow Integration System"
+  tags: ["data", "processing", "etl"]
+  category: "data-pipeline"
+
+inputs:
+  - name: "source_data"
+    type: "json"
+    description: "Raw data to be processed"
+    required: true
+  - name: "processing_config"
+    type: "json"
+    description: "Configuration for data processing"
+    required: false
+    default: {"format": "standard", "validation": true}
+
+outputs:
+  - name: "processed_data"
+    type: "json"
+    description: "Processed and validated data"
+  - name: "processing_report"
+    type: "json"
+    description: "Report of processing operations"
+
+environment:
+  variables:
+    PROCESSING_MODE: "production"
+    LOG_LEVEL: "info"
+
+steps:
+  - name: "validate"
+    action: "validate-data"
+    description: "Validate input data against schema"
+    config:
+      schema: "schemas/data-schema.json"
+      strict_mode: true
+    inputs:
+      data: "source_data"
+    retry:
+      max_attempts: 3
+      delay: 2
+      backoff: "exponential"
+    timeout: 300
+
+  - name: "normalize"
+    action: "normalize-data"
+    description: "Normalize data format and structure"
+    depends_on: ["validate"]
+    config:
+      format: "standard"
+      remove_duplicates: true
+    inputs:
+      raw_data: "source_data"
+      validation_result: "validate.outputs.result"
+
+  - name: "enrich"
+    action: "enrich-data"
+    description: "Enrich data with additional information"
+    depends_on: ["normalize"]
+    config:
+      enrichment_sources: ["external-api", "lookup-tables"]
+      timeout: 120
+    inputs:
+      normalized_data: "normalize.outputs.data"
+
+  - name: "transform"
+    action: "transform-data"
+    description: "Apply business logic transformations"
+    depends_on: ["enrich"]
+    config:
+      transformations:
+        - type: "aggregate"
+          fields: ["amount", "quantity"]
+        - type: "calculate"
+          formula: "amount * quantity"
+          output_field: "total"
+    inputs:
+      enriched_data: "enrich.outputs.data"
+
+  - name: "quality-check"
+    action: "quality-check"
+    description: "Perform data quality checks"
+    depends_on: ["transform"]
+    config:
+      checks:
+        - type: "completeness"
+          threshold: 0.95
+        - type: "accuracy"
+          rules: ["total > 0", "quantity >= 0"]
+    inputs:
+      data: "transform.outputs.data"
+
+  - name: "output"
+    action: "save-data"
+    description: "Save processed data to destination"
+    depends_on: ["quality-check"]
+    condition: "quality-check.outputs.passed == true"
+    config:
+      destination: "processed/"
+      format: "json"
+      compression: "gzip"
+    inputs:
+      data: "transform.outputs.data"
+      quality_report: "quality-check.outputs.report"
+
+error_handling:
+  on_failure: "rollback"
+  cleanup_steps: ["cleanup-temp-files", "send-error-notification"]
+  notifications:
+    - type: "email"
+      config:
+        recipients: ["data-team@example.com"]
+        subject: "Data Processing Flow Failed"
+    - type: "slack"
+      config:
+        channel: "#data-alerts"
+        webhook_url: "${SLACK_WEBHOOK_URL}"
+
+monitoring:
+  metrics: ["processing_time", "records_processed", "error_rate"]
+  logs:
+    level: "info"
+    format: "json"

@@ -1,0 +1,200 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Flow Definition Schema",
+  "description": "Schema for defining multi-flow integration flows",
+  "type": "object",
+  "required": ["name", "version", "type", "steps"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for the flow",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the flow",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"
+    },
+    "type": {
+      "type": "string",
+      "description": "Type of flow",
+      "enum": ["data-pipeline", "ci-cd", "automation", "integration", "custom"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the flow"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the flow",
+      "properties": {
+        "author": {"type": "string"},
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "category": {"type": "string"}
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Input parameters for the flow",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {"type": "string"},
+          "type": {
+            "type": "string",
+            "enum": ["string", "number", "boolean", "json", "array", "file"]
+          },
+          "description": {"type": "string"},
+          "required": {"type": "boolean", "default": false},
+          "default": {},
+          "validation": {
+            "type": "object",
+            "properties": {
+              "pattern": {"type": "string"},
+              "min": {"type": "number"},
+              "max": {"type": "number"},
+              "enum": {"type": "array"}
+            }
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "description": "Output parameters from the flow",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {"type": "string"},
+          "type": {
+            "type": "string",
+            "enum": ["string", "number", "boolean", "json", "array", "file"]
+          },
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "description": "Environment variables and configuration",
+      "properties": {
+        "variables": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "secrets": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "description": "Execution steps for the flow",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "action"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique name for the step"
+          },
+          "action": {
+            "type": "string",
+            "description": "Action to execute"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this step does"
+          },
+          "depends_on": {
+            "type": "array",
+            "description": "Steps that must complete before this step",
+            "items": {"type": "string"}
+          },
+          "condition": {
+            "type": "string",
+            "description": "Condition that must be true to execute this step"
+          },
+          "retry": {
+            "type": "object",
+            "description": "Retry configuration",
+            "properties": {
+              "max_attempts": {"type": "integer", "minimum": 1, "default": 3},
+              "delay": {"type": "integer", "minimum": 0, "default": 1},
+              "backoff": {"type": "string", "enum": ["linear", "exponential"], "default": "linear"}
+            }
+          },
+          "timeout": {
+            "type": "integer",
+            "description": "Timeout in seconds for this step",
+            "minimum": 1
+          },
+          "config": {
+            "type": "object",
+            "description": "Step-specific configuration"
+          },
+          "inputs": {
+            "type": "object",
+            "description": "Input mapping for this step"
+          },
+          "outputs": {
+            "type": "object",
+            "description": "Output mapping for this step"
+          }
+        }
+      }
+    },
+    "error_handling": {
+      "type": "object",
+      "description": "Global error handling configuration",
+      "properties": {
+        "on_failure": {
+          "type": "string",
+          "enum": ["stop", "continue", "retry", "rollback"],
+          "default": "stop"
+        },
+        "cleanup_steps": {
+          "type": "array",
+          "description": "Steps to run on failure",
+          "items": {"type": "string"}
+        },
+        "notifications": {
+          "type": "array",
+          "description": "Notification channels for errors",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string", "enum": ["email", "slack", "webhook"]},
+              "config": {"type": "object"}
+            }
+          }
+        }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "description": "Monitoring and observability configuration",
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "description": "Metrics to collect",
+          "items": {"type": "string"}
+        },
+        "logs": {
+          "type": "object",
+          "properties": {
+            "level": {"type": "string", "enum": ["debug", "info", "warn", "error"]},
+            "format": {"type": "string", "enum": ["json", "text"]}
+          }
+        }
+      }
+    }
+  }
+}
