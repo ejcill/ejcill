@@ -1,0 +1,119 @@
+name: "build-flow"
+version: "1.0"
+type: "ci-cd"
+description: "Build and package application artifacts"
+
+metadata:
+  author: "Multi-Flow Integration System"
+  tags: ["ci", "build", "artifacts"]
+  category: "ci-cd"
+
+inputs:
+  - name: "source_code"
+    type: "string"
+    description: "Path to source code repository"
+    required: true
+  - name: "build_config"
+    type: "json"
+    description: "Build configuration parameters"
+    required: false
+    default: {"target": "production", "optimize": true}
+
+outputs:
+  - name: "artifacts"
+    type: "json"
+    description: "Built application artifacts"
+  - name: "build_report"
+    type: "json"
+    description: "Build process report and metrics"
+
+environment:
+  variables:
+    BUILD_ENV: "ci"
+    NODE_ENV: "production"
+  secrets:
+    - "NPM_TOKEN"
+    - "BUILD_SECRET"
+
+steps:
+  - name: "checkout"
+    action: "checkout-code"
+    description: "Checkout source code from repository"
+    config:
+      repository: "source_code"
+      branch: "main"
+      depth: 1
+
+  - name: "setup"
+    action: "setup-environment"
+    description: "Setup build environment and dependencies"
+    depends_on: ["checkout"]
+    config:
+      runtime: "node"
+      version: "18"
+      cache_dependencies: true
+    retry:
+      max_attempts: 2
+      delay: 5
+
+  - name: "install"
+    action: "install-dependencies"
+    description: "Install project dependencies"
+    depends_on: ["setup"]
+    config:
+      package_manager: "npm"
+      install_dev_deps: false
+    timeout: 600
+
+  - name: "lint"
+    action: "run-linter"
+    description: "Run code quality checks"
+    depends_on: ["install"]
+    config:
+      linter: "eslint"
+      config_file: ".eslintrc.js"
+      fail_on_error: true
+
+  - name: "test"
+    action: "run-tests"
+    description: "Execute unit and integration tests"
+    depends_on: ["install"]
+    config:
+      test_runner: "jest"
+      coverage: true
+      coverage_threshold: 80
+    timeout: 900
+
+  - name: "build"
+    action: "build-application"
+    description: "Build application for production"
+    depends_on: ["lint", "test"]
+    config:
+      build_command: "npm run build"
+      output_dir: "dist/"
+      minify: true
+      source_maps: false
+
+  - name: "package"
+    action: "package-artifacts"
+    description: "Package build artifacts"
+    depends_on: ["build"]
+    config:
+      format: "tar.gz"
+      include_patterns: ["dist/**", "package.json", "README.md"]
+      exclude_patterns: ["**/*.test.js", "**/*.spec.js"]
+
+error_handling:
+  on_failure: "stop"
+  cleanup_steps: ["cleanup-build-cache"]
+  notifications:
+    - type: "slack"
+      config:
+        channel: "#ci-cd"
+        message: "Build failed for ${GITHUB_REF}"
+
+monitoring:
+  metrics: ["build_time", "artifact_size", "test_coverage"]
+  logs:
+    level: "info"
+    format: "json"
