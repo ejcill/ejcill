@@ -175,6 +175,12 @@ class IntegrationEngine:
             yaml.dump(example_config, f, default_flow_style=False, indent=2)
         
         logger.info(f"Created example workflows at {workflow_file}")
+        
+        # Load the workflows we just created
+        for workflow_data in example_config.get('workflows', []):
+            workflow = WorkflowDefinition(**workflow_data)
+            self.workflows[workflow.name] = workflow
+            logger.info(f"Loaded workflow: {workflow.name}")
     
     def register_workflow(self, workflow: WorkflowDefinition) -> bool:
         """Register a new workflow definition"""
