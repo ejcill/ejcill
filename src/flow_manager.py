@@ -80,8 +80,10 @@ class FlowManager:
     """Manages flow definitions, validation, and registration"""
     
     def __init__(self, flows_dir: str = "flows", schema_path: str = "schemas/flow-schema.json"):
-        self.flows_dir = Path(flows_dir)
-        self.schema_path = Path(schema_path)
+        # Get the project root directory (parent of src)
+        project_root = Path(__file__).parent.parent
+        self.flows_dir = project_root / flows_dir
+        self.schema_path = project_root / schema_path
         self.flows: Dict[str, Flow] = {}
         self.schema = self._load_schema()
         

@@ -70,7 +70,9 @@ class IntegrationEngine:
     
     def __init__(self, flow_manager: FlowManager, config_dir: str = "config"):
         self.flow_manager = flow_manager
-        self.config_dir = Path(config_dir)
+        # Get the project root directory (parent of src)
+        project_root = Path(__file__).parent.parent
+        self.config_dir = project_root / config_dir
         self.workflows: Dict[str, WorkflowDefinition] = {}
         self.active_executions: Dict[str, WorkflowExecution] = {}
         
